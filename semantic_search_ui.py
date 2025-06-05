@@ -34,13 +34,24 @@ def semantic_search(query, top_k=5):
 
     cosine_scores = util.cos_sim(query_embedding, product_embeddings)[0]
 
-    top_results = torch.topk(cosine_scores, k=top_k)
+    top_results = torch.topk(cosine_scores, k=top_k * 5)  # Fetch more to allow for duplicates filtering
 
     results = []
+    seen_ids = set()
+
     for score, idx in zip(top_results.values, top_results.indices):
         product_info = df.iloc[idx.item()]
-        results.append((score.item(), product_info))
+        pid = product_info['product_id']
+
+        if pid not in seen_ids:
+            results.append((score.item(), product_info))
+            seen_ids.add(pid)
+
+        if len(results) >= top_k:
+            break
+
     return results
+
 
 
 
